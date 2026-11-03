@@ -1,0 +1,11 @@
+stages:
+  - test
+
+unit-test-job:
+  stage: test
+  image: python:3.11-slim
+  script:
+    - echo "Установка зависимостей..."
+    - pip install pytest
+    - echo "Запуск юнит-тестов..."
+    - pytest tests/ 
