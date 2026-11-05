@@ -1,0 +1,49 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p release
+          cp -r dist/* release/
+
+      - name: Generate changelog
+        run: |
+          echo "# Changelog for ${{ github.ref_name }}" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          git log "$(git describe --tags --abbrev=0 "${{ github.ref_name }}^" 2>/dev/null || echo HEAD~10)..${{ github.ref_name }}" --pretty=format:"- %s (%h)" >> CHANGELOG.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
+          body_path: CHANGELOG.md
+          files: |
+            release/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
